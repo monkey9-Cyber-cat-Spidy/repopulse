@@ -1,0 +1,19 @@
+{
+  "name": "@repopulse/graph",
+  "version": "1.0.0",
+  "description": "C4 hierarchical multigraph engine, algorithms, and React Flow serializer for RepoPulse",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "graphology": "^0.25.4",
+    "@dagrejs/dagre": "^1.1.4",
+    "@repopulse/scanner": "*"
+  },
+  "devDependencies": {
+    "@types/dagre": "^0.7.52"
+  }
+}

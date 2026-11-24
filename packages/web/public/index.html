@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RepoPulse — Living Architecture Cartographer & Truth Engine</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <style>
+    :root {
+      --pico-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --bg-dark: #0f172a;
+      --card-bg: #1e293b;
+      --border-color: #334155;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+      font-family: var(--pico-font-family);
+      overflow-x: hidden;
+    }
+
+    header {
+      background-color: var(--card-bg);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand h1 {
+      font-size: 1.25rem;
+      margin: 0;
+      color: var(--accent);
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .brand span {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      border-left: 1px solid var(--border-color);
+      padding-left: 0.75rem;
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 1.5rem;
+      font-size: 0.85rem;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-item span:first-child {
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+    }
+
+    .stat-item span:last-child {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .main-layout {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      height: calc(100vh - 65px);
+    }
+
+    .viewport {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border-color);
+      position: relative;
+    }
+
+    .toolbar {
+      padding: 0.75rem 1.5rem;
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .level-pills {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .level-pill {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .level-pill.active {
+      background: var(--accent);
+      color: #0f172a;
+      font-weight: 600;
+      border-color: var(--accent);
+    }
+
+    .canvas-container {
+      flex: 1;
+      overflow: auto;
+      padding: 2rem;
+      position: relative;
+      background: radial-gradient(#334155 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    .graph-canvas {
+      position: relative;
+      min-width: 1000px;
+      min-height: 700px;
+    }
+
+    .node-card {
+      position: absolute;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      width: 220px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .node-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 12px -2px rgba(56, 189, 248, 0.2);
+    }
+
+    .node-card.selected {
+      border-color: var(--accent);
+      outline: 2px solid var(--accent);
+    }
+
+    .node-kind {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 0.25rem;
+    }
+
+    .node-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .node-meta {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .sidebar {
+      background: var(--card-bg);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-section {
+      padding: 1.25rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .sidebar-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.75rem;
+    }
+
+    .truth-dial {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: rgba(15, 23, 42, 0.5);
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .dial-score {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .dial-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .evidence-box {
+      background: #090d16;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-family: monospace;
+      font-size: 0.75rem;
+      color: #38bdf8;
+      max-height: 250px;
+      overflow: auto;
+      white-space: pre;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      font-weight: 600;
+    }
+
+    .badge-verified { background: rgba(34, 197, 94, 0.2); color: var(--success); }
+    .badge-outdated { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+    .badge-contradicted { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <h1>RepoPulse</h1>
+      <span>Living Architecture Cartographer & Truth Engine</span>
+    </div>
+    <div class="stats-bar" id="statsBar">
+      <div class="stat-item">
+        <span>Files</span>
+        <span id="statFiles">--</span>
+      </div>
+      <div class="stat-item">
+        <span>Total LOC</span>
+        <span id="statLoc">--</span>
+      </div>
+      <div class="stat-item">
+        <span>Routes</span>
+        <span id="statRoutes">--</span>
+      </div>
+      <div class="stat-item">
+        <span>Truth Score</span>
+        <span id="statTruth" style="color: var(--accent);">--%</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="main-layout">
+    <!-- Viewport with Interactive Canvas -->
+    <div class="viewport">
+      <div class="toolbar">
+        <div class="level-pills">
+          <button class="level-pill" onclick="loadGraph(1)">L1 Context</button>
+          <button class="level-pill" onclick="loadGraph(2)">L2 Container</button>
+          <button class="level-pill active" onclick="loadGraph(3)">L3 Component</button>
+          <button class="level-pill" onclick="loadGraph(4)">L4 Code</button>
+        </div>
+        <span style="font-size: 0.75rem; color: var(--text-muted);" id="graphMeta">Loading architecture map...</span>
+      </div>
+
+      <div class="canvas-container" id="canvasContainer">
+        <svg id="svgEdges" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></svg>
+        <div class="graph-canvas" id="graphCanvas"></div>
+      </div>
+    </div>
+
+    <!-- Evidence & Truth Sidebar -->
+    <div class="sidebar">
+      <!-- Section 1: Truth Scorecard -->
+      <div class="sidebar-section">
+        <div class="sidebar-title">Documentation Truth Score</div>
+        <div class="truth-dial">
+          <div class="dial-score" id="dialScore">--%</div>
+          <div class="dial-meta">
+            <div><strong id="verifiedCount">0</strong> Verified Claims</div>
+            <div><strong id="outdatedCount">0</strong> Outdated Claims</div>
+            <div><strong id="contradictedCount">0</strong> Contradictions</div>
+            <div><strong id="undocCount">0</strong> Undocumented Systems</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Selected Node Evidence -->
+      <div class="sidebar-section" style="flex: 1;">
+        <div class="sidebar-title">Evidence Inspector</div>
+        <div id="evidencePanel">
+          <p style="font-size: 0.8rem; color: var(--text-muted);">
+            Click any component or route in the architecture canvas to inspect its immutable AST evidence pointer and verified source code lines.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentLevel = 3;
+    let graphData = null;
+
+    async function init() {
+      // 1. Load scan metadata
+      const scanRes = await fetch('/api/scan');
+      const scan = await scanRes.json();
+      document.getElementById('statFiles').innerText = scan.totalFiles;
+      document.getElementById('statLoc').innerText = scan.totalLOC.toLocaleString();
+      document.getElementById('statRoutes').innerText = scan.routesCount;
+
+      // 2. Load Truth Score
+      const truthRes = await fetch('/api/truth');
+      const truth = await truthRes.json();
+      document.getElementById('statTruth').innerText = `${truth.truthScore}%`;
+      document.getElementById('dialScore').innerText = `${truth.truthScore}%`;
+      document.getElementById('verifiedCount').innerText = truth.breakdown.verified;
+      document.getElementById('outdatedCount').innerText = truth.breakdown.outdated;
+      document.getElementById('contradictedCount').innerText = truth.breakdown.contradicted;
+      document.getElementById('undocCount').innerText = truth.breakdown.undocumented;
+
+      // 3. Load Level 3 Component Graph
+      loadGraph(3);
+    }
+
+    async function loadGraph(level) {
+      currentLevel = level;
+      document.querySelectorAll('.level-pill').forEach((btn, idx) => {
+        btn.classList.toggle('active', idx + 1 === level);
+      });
+
+      document.getElementById('graphMeta').innerText = `Loading C4 Level ${level}...`;
+      const res = await fetch(`/api/graph?level=${level}`);
+      graphData = await res.json();
+
+      document.getElementById('graphMeta').innerText = `${graphData.nodes.length} nodes · ${graphData.edges.length} connections · ${graphData.metrics.cyclesDetected} cycles`;
+      renderGraph(graphData);
+    }
+
+    function renderGraph(data) {
+      const canvas = document.getElementById('graphCanvas');
+      canvas.innerHTML = '';
+      const svg = document.getElementById('svgEdges');
+      svg.innerHTML = '';
+
+      // Normalize offsets
+      let minX = Infinity, minY = Infinity;
+      data.nodes.forEach(n => {
+        if (n.position.x < minX) minX = n.position.x;
+        if (n.position.y < minY) minY = n.position.y;
+      });
+      const offsetX = Math.max(40, -minX + 40);
+      const offsetY = Math.max(40, -minY + 40);
+
+      // Render Nodes
+      data.nodes.forEach(node => {
+        const div = document.createElement('div');
+        div.className = 'node-card';
+        div.style.left = `${node.position.x + offsetX}px`;
+        div.style.top = `${node.position.y + offsetY}px`;
+        div.innerHTML = `
+          <div class="node-kind">${node.data.kind}</div>
+          <div class="node-label" title="${node.data.label}">${node.data.label}</div>
+          <div class="node-meta">
+            <span>${node.data.technologies.slice(0, 2).join(', ') || 'Code'}</span>
+            <span>${node.data.loc ? node.data.loc + ' LOC' : ''}</span>
+          </div>
+        `;
+        div.onclick = () => selectNode(node);
+        canvas.appendChild(div);
+      });
+
+      // Render Edges
+      data.edges.forEach(edge => {
+        const sourceNode = data.nodes.find(n => n.id === edge.source);
+        const targetNode = data.nodes.find(n => n.id === edge.target);
+        if (sourceNode && targetNode) {
+          const x1 = sourceNode.position.x + offsetX + 110;
+          const y1 = sourceNode.position.y + offsetY + 40;
+          const x2 = targetNode.position.x + offsetX + 110;
+          const y2 = targetNode.position.y + offsetY + 40;
+
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', x1);
+          line.setAttribute('y1', y1);
+          line.setAttribute('x2', x2);
+          line.setAttribute('y2', y2);
+          line.setAttribute('stroke', '#334155');
+          line.setAttribute('stroke-width', '1.5');
+          line.setAttribute('stroke-dasharray', edge.animated ? '4,4' : 'none');
+          svg.appendChild(line);
+        }
+      });
+    }
+
+    function selectNode(node) {
+      const panel = document.getElementById('evidencePanel');
+      panel.innerHTML = `
+        <h4 style="font-size: 0.95rem; margin-bottom: 0.25rem;">${node.data.label}</h4>
+        <div style="margin-bottom: 0.75rem;">
+          <span class="badge badge-verified">C4 LEVEL ${node.data.c4Level}</span>
+          <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">${node.data.kind}</span>
+        </div>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+          <strong>File:</strong> ${node.data.filePath || 'System Boundary'}
+          ${node.data.startLine ? '<br><strong>Lines:</strong> ' + node.data.startLine + ' - ' + node.data.endLine : ''}
+        </p>
+        <div class="sidebar-title">Source Evidence</div>
+        <div class="evidence-box">${escapeHtml(node.data.evidence?.codeSnippet || '// Verified AST symbol representation: ' + node.data.label)}</div>
+      `;
+    }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "name": "@repopulse/cli",
+  "version": "1.0.0",
+  "description": "Command-line interface for RepoPulse",
+  "main": "./dist/index.js",
+  "bin": {
+    "repopulse": "./dist/index.js"
+  },
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "scan": "node ./dist/index.js scan",
+    "verify": "node ./dist/index.js verify",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "@repopulse/scanner": "*",
+    "@repopulse/graph": "*",
+    "@repopulse/truth-engine": "*",
+    "@repopulse/db": "*"
+  }
+}

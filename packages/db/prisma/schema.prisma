@@ -1,0 +1,197 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Repository {
+  id             String          @id @default(uuid())
+  name           String
+  rootPath       String
+  remoteUrl      String?
+  commitSha      String?
+  scannedAt      DateTime        @default(now())
+  locTotal       Int             @default(0)
+  truthScore     Float?          @default(0.0)
+  
+  files          FileNode[]
+  symbols        Symbol[]
+  routes         RouteEndpoint[]
+  models         DataModel[]
+  dependencies   Dependency[]
+  docClaims      DocClaim[]
+  audits         EvidenceAudit[]
+  tests          CharacterizationTest[]
+  graphs         ArchitectureGraph[]
+
+  @@index([name])
+}
+
+model FileNode {
+  id             String        @id @default(uuid())
+  repositoryId   String
+  relativePath   String
+  language       String        @default("JAVASCRIPT")
+  loc            Int           @default(0)
+  sizeBytes      Int           @default(0)
+  sha256Hash     String
+  isEntrypoint   Boolean       @default(false)
+  
+  repository     Repository    @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  symbols        Symbol[]
+  sourceDeps     Dependency[]  @relation("SourceFileDeps")
+  targetDeps     Dependency[]  @relation("TargetFileDeps")
+  routes         RouteEndpoint[]
+  models         DataModel[]
+
+  @@unique([repositoryId, relativePath])
+  @@index([repositoryId])
+}
+
+model Symbol {
+  id             String        @id @default(uuid())
+  repositoryId   String
+  fileNodeId     String
+  name           String
+  kind           String
+  isExported     Boolean       @default(false)
+  isDefaultExport Boolean      @default(false)
+  
+  startLine      Int
+  endLine        Int
+  startColumn    Int
+  endColumn      Int
+  astNodeType    String
+  signature      String?
+  docstring      String?
+  
+  fileNode       FileNode      @relation(fields: [fileNodeId], references: [id], onDelete: Cascade)
+  repository     Repository    @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@index([repositoryId, name])
+  @@index([fileNodeId])
+}
+
+model Dependency {
+  id             String        @id @default(uuid())
+  repositoryId   String
+  sourceFileId   String
+  targetFileId   String?
+  importStatement String
+  importedNames  String        // JSON array of strings
+  isDynamic      Boolean       @default(false)
+  resolvedPath   String?
+  
+  repository     Repository    @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  sourceFile     FileNode      @relation("SourceFileDeps", fields: [sourceFileId], references: [id], onDelete: Cascade)
+  targetFile     FileNode?     @relation("TargetFileDeps", fields: [targetFileId], references: [id], onDelete: SetNull)
+
+  @@index([repositoryId])
+  @@index([sourceFileId])
+}
+
+model RouteEndpoint {
+  id             String        @id @default(uuid())
+  repositoryId   String
+  fileNodeId     String
+  httpMethod     String        // GET, POST, PUT, DELETE, PATCH, USE
+  pathPattern    String        // e.g. "/api/v1/orders/:id"
+  rawMountPath   String?       // Sub-router mount prefix
+  fullPath       String        // Fully resolved router path
+  handlerSymbol  String?
+  middlewareJson String        // JSON array of middleware symbol names/references
+  startLine      Int
+  endLine        Int
+  
+  repository     Repository    @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  fileNode       FileNode      @relation(fields: [fileNodeId], references: [id], onDelete: Cascade)
+
+  @@index([repositoryId, httpMethod, fullPath])
+}
+
+model DataModel {
+  id             String        @id @default(uuid())
+  repositoryId   String
+  fileNodeId     String
+  ormType        String        // PRISMA, MONGOOSE, SEQUELIZE, TYPEORM, RAW_SQL
+  modelName      String        // e.g. "Order", "Product", "Customer"
+  tableName      String?
+  schemaJson     String        // Extracted field names and types (JSON string)
+  relationsJson  String?       // Foreign keys, references, relations (JSON string)
+  startLine      Int
+  endLine        Int
+  
+  repository     Repository    @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  fileNode       FileNode      @relation(fields: [fileNodeId], references: [id], onDelete: Cascade)
+
+  @@index([repositoryId, modelName])
+}
+
+model DocClaim {
+  id             String        @id @default(uuid())
+  repositoryId   String
+  sourceDocPath  String        // e.g. "README.md"
+  claimCategory  String        // API_ROUTE, DATABASE, AUTHENTICATION, ARCHITECTURE, ENVIRONMENT
+  rawClaimText   String
+  claimedEntity  String        // e.g. "GET /api/orders", "PostgreSQL", "JWT"
+  status         String        @default("UNDOCUMENTED") // VERIFIED, OUTDATED, CONTRADICTED, UNDOCUMENTED
+  confidence     Float         @default(1.0)
+  explanation    String
+  
+  evidenceFile   String?
+  evidenceLines  String?       // e.g. "L45-L62"
+  
+  repository     Repository    @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@index([repositoryId, status])
+}
+
+model EvidenceAudit {
+  id             String        @id @default(uuid())
+  repositoryId   String
+  entityType     String        // ROUTE, MODEL, CLAIM, SYMBOL
+  entityIdentifier String
+  filePath       String
+  commitSha      String?
+  startLine      Int
+  endLine        Int
+  astNodeType    String
+  codeExcerpt    String        // Sanitized excerpt with secrets scrubbed
+  verifiedAt     DateTime      @default(now())
+
+  repository     Repository    @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@index([repositoryId, entityType])
+}
+
+model CharacterizationTest {
+  id             String        @id @default(uuid())
+  repositoryId   String
+  targetEntity   String        // e.g. "POST /api/orders" or "calculateTax"
+  testFramework  String        @default("VITEST") // VITEST, JEST
+  testCode       String
+  inputVectors   String        // JSON of simulated inputs
+  expectedOutput String        // JSON of observed outputs
+  executionState String        @default("PROPOSED") // PROPOSED, VERIFIED, FAILED
+  runOutput      String?
+  createdAt      DateTime      @default(now())
+
+  repository     Repository    @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@index([repositoryId, targetEntity])
+}
+
+model ArchitectureGraph {
+  id             String        @id @default(uuid())
+  repositoryId   String
+  c4Level        Int           // 1 = Context, 2 = Container, 3 = Component, 4 = Code
+  graphJson      String        // Serialized Graphology graph / React Flow elements
+  createdAt      DateTime      @default(now())
+
+  repository     Repository    @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@unique([repositoryId, c4Level])
+}

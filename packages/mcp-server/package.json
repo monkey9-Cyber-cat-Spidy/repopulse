@@ -1,0 +1,19 @@
+{
+  "name": "@repopulse/mcp-server",
+  "version": "1.0.0",
+  "description": "Model Context Protocol (MCP) server for RepoPulse",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "node ./dist/index.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "@repopulse/scanner": "*",
+    "@repopulse/graph": "*",
+    "@repopulse/truth-engine": "*",
+    "@repopulse/db": "*"
+  }
+}

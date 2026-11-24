@@ -1,0 +1,29 @@
+name: Documentation Drift Monitor
+
+on:
+  schedule:
+    - cron: '0 0 * * 1' # Run weekly on Monday at 00:00 UTC
+  workflow_dispatch:
+
+jobs:
+  audit-documentation:
+    name: Audit Documentation Against Code Truth
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies & Build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Run Truth Engine Verification
+        run: node packages/cli/dist/index.js verify . -d README.md

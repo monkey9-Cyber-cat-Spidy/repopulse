@@ -1,0 +1,19 @@
+{
+  "name": "@repopulse/db",
+  "version": "1.0.0",
+  "description": "Prisma ORM schema and dual-engine data access layer for RepoPulse",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prisma:generate": "prisma generate",
+    "prisma:push": "prisma db push",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0"
+  }
+}

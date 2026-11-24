@@ -1,0 +1,40 @@
+name: RepoPulse CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: Build, Test & Architecture Verification
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Monorepo Dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npm run prisma:generate --workspace=@repopulse/db
+
+      - name: Compile TypeScript Packages
+        run: npm run build
+
+      - name: Run Vitest Suite with V8 Code Coverage
+        run: npm run test:coverage
+
+      - name: Run Self-Analysis Architecture Scan
+        run: node packages/cli/dist/index.js scan .
+
+      - name: Verify Documentation Truth
+        run: node packages/cli/dist/index.js verify . -d README.md

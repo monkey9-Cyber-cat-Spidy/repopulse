@@ -1,0 +1,16 @@
+{
+  "name": "@repopulse/web",
+  "version": "1.0.0",
+  "description": "Interactive React Flow architecture explorer and truth scorecard for RepoPulse",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "express": "^4.21.1",
+    "@repopulse/scanner": "*",
+    "@repopulse/graph": "*",
+    "@repopulse/truth-engine": "*"
+  }
+}

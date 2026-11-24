@@ -1,0 +1,28 @@
+{
+  "name": "repopulse-monorepo",
+  "version": "1.0.0",
+  "description": "Living Architecture Cartographer & Truth Engine",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "scan": "npm run scan --workspace=@repopulse/cli --",
+    "mcp": "npm run start --workspace=@repopulse/mcp-server",
+    "dev": "npm run dev --workspace=@repopulse/web",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write \"packages/**/*.{ts,tsx,json,md}\""
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4",
+    "@vitest/coverage-v8": "^2.1.4"
+  },
+  "author": "Manikanta <monkey9-Cyber-cat-Spidy>",
+  "license": "MIT"
+}
