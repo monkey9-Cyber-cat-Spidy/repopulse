@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
+    "build": "node -e \"console.log('web ready')\"",
     "test": "vitest run"
   },
   "dependencies": {

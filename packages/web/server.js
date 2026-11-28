@@ -7,7 +7,8 @@ import { buildC4Graph, exportToReactFlow } from '@repopulse/graph';
 import {
   extractClaimsFromMarkdown,
   verifyClaimsAgainstAST,
-  computeTruthScore
+  computeTruthScore,
+  generateCharacterizationTest
 } from '@repopulse/truth-engine';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -65,6 +66,40 @@ app.get('/api/truth', (req, res) => {
 app.get('/api/routes', (req, res) => {
   const { scan } = getOrComputeScan();
   res.json(scan.allRoutes);
+});
+
+app.post('/api/test-gen', (req, res) => {
+  const { target, framework = 'VITEST' } = req.body || {};
+  if (!target) return res.status(400).json({ error: 'target parameter required' });
+
+  const { scan } = getOrComputeScan();
+  const route = scan.allRoutes.find(
+    (r) =>
+      `${r.httpMethod} ${r.fullPath}`.toLowerCase() === target.toLowerCase() ||
+      r.fullPath.toLowerCase() === target.toLowerCase()
+  );
+
+  if (route) {
+    const plan = generateCharacterizationTest(route, framework);
+    return res.json(plan);
+  }
+
+  for (const file of scan.files.values()) {
+    const sym = file.symbols.find((s) => s.name.toLowerCase() === target.toLowerCase());
+    if (sym) {
+      const plan = generateCharacterizationTest(sym, framework);
+      return res.json(plan);
+    }
+  }
+
+  return res.status(404).json({ error: `Target '${target}' not found in symbols or routes` });
+});
+
+app.post('/api/rescan', (req, res) => {
+  cachedScan = null;
+  cachedTruth = null;
+  const { scan, truth } = getOrComputeScan();
+  res.json({ success: true, totalFiles: scan.totalFiles, truthScore: truth.truthScore });
 });
 
 app.listen(PORT, () => {

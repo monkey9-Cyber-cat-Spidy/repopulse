@@ -94,7 +94,7 @@ program
 
     if (report.breakdown.contradicted > 0) {
       console.log(`🚨 Contradictions Detected:`);
-      for (const claim of report.claims.filter((c) => c.status === 'CONTRADICTED')) {
+      for (const claim of report.claims.filter((c: any) => c.status === 'CONTRADICTED')) {
         console.log(`   - [Line ${claim.line}] "${claim.rawText}" -> ${claim.explanation}`);
       }
       console.log('');
@@ -123,13 +123,13 @@ program
   .description('Generates behavioral characterization tests for an endpoint or function')
   .option('-p, --path <path>', 'Repository root path', '.')
   .option('-f, --framework <framework>', 'VITEST or JEST', 'VITEST')
-  .action((target, options) => {
+  .action((target: string, options: any) => {
     const root = path.resolve(options.path);
     const scan = scanRepository(root);
 
     // Find route or symbol
     const route = scan.allRoutes.find(
-      (r) =>
+      (r: any) =>
         `${r.httpMethod} ${r.fullPath}`.toLowerCase() === target.toLowerCase() ||
         r.fullPath.toLowerCase() === target.toLowerCase()
     );
@@ -143,7 +143,7 @@ program
 
     let symbol: any = null;
     for (const file of scan.files.values()) {
-      const found = file.symbols.find((s) => s.name.toLowerCase() === target.toLowerCase());
+      const found = file.symbols.find((s: any) => s.name.toLowerCase() === target.toLowerCase());
       if (found) {
         symbol = found;
         break;

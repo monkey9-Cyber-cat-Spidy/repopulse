@@ -4,454 +4,1358 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RepoPulse — Living Architecture Cartographer & Truth Engine</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --pico-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      --bg-dark: #0f172a;
-      --card-bg: #1e293b;
-      --border-color: #334155;
-      --accent: #38bdf8;
-      --accent-hover: #0284c7;
-      --text: #f8fafc;
+      --bg-base: #080c14;
+      --bg-surface: #0f172a;
+      --bg-card: #151f32;
+      --bg-card-hover: #1c2a44;
+      --border-subtle: #1e293b;
+      --border-strong: #334155;
+      --border-focus: #38bdf8;
+      
+      --text-main: #f8fafc;
       --text-muted: #94a3b8;
-      --success: #22c55e;
-      --warning: #f59e0b;
-      --danger: #ef4444;
+      --text-dim: #64748b;
+
+      --cyan-glow: #38bdf8;
+      --cyan-bg: rgba(56, 189, 248, 0.12);
+      --purple-accent: #c084fc;
+      --purple-bg: rgba(192, 132, 252, 0.12);
+      --emerald: #34d399;
+      --emerald-bg: rgba(52, 211, 153, 0.12);
+      --amber: #fbbf24;
+      --amber-bg: rgba(251, 191, 36, 0.12);
+      --rose: #f43f5e;
+      --rose-bg: rgba(244, 63, 94, 0.12);
+
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'Fira Code', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
     body {
-      background-color: var(--bg-dark);
-      color: var(--text);
-      margin: 0;
-      padding: 0;
-      font-family: var(--pico-font-family);
-      overflow-x: hidden;
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-strong);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--cyan-glow);
+    }
+
+    /* Header */
     header {
-      background-color: var(--card-bg);
-      border-bottom: 1px solid var(--border-color);
-      padding: 1rem 2rem;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0.65rem 1.5rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      z-index: 100;
     }
 
-    .brand {
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .radar-icon {
+      width: 28px;
+      height: 28px;
+      background: radial-gradient(circle, var(--cyan-glow) 15%, transparent 70%);
+      border: 1.5px solid var(--cyan-glow);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.4);
+    }
+
+    .radar-icon::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--cyan-glow);
+      border-radius: 50%;
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(2.2); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      background: linear-gradient(135deg, #ffffff 40%, var(--cyan-glow) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .target-repo-tag {
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .target-repo-tag .dot {
+      width: 6px;
+      height: 6px;
+      background: var(--emerald);
+      border-radius: 50%;
+    }
+
+    .header-stats {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .stat-chip {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .stat-label {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      font-weight: 600;
+    }
+
+    .stat-value {
+      font-size: 0.95rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: var(--text-main);
+    }
+
+    .header-actions {
       display: flex;
       align-items: center;
       gap: 0.75rem;
     }
 
-    .brand h1 {
-      font-size: 1.25rem;
-      margin: 0;
-      color: var(--accent);
-      font-weight: 700;
-      letter-spacing: -0.5px;
-    }
-
-    .brand span {
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
       font-size: 0.8rem;
-      color: var(--text-muted);
-      border-left: 1px solid var(--border-color);
-      padding-left: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.15s ease;
     }
 
-    .stats-bar {
-      display: flex;
-      gap: 1.5rem;
-      font-size: 0.85rem;
+    .btn-ghost:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: var(--border-strong);
+      color: var(--text-main);
     }
 
-    .stat-item {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .stat-item span:first-child {
-      color: var(--text-muted);
-      font-size: 0.7rem;
-      text-transform: uppercase;
-    }
-
-    .stat-item span:last-child {
+    .btn-primary {
+      background: linear-gradient(135deg, #0284c7, var(--cyan-glow));
+      border: none;
+      color: #080c14;
+      padding: 0.4rem 0.9rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
       font-weight: 600;
-      color: var(--text);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
     }
 
-    .main-layout {
+    .btn-primary:hover {
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+      transform: translateY(-1px);
+    }
+
+    /* Main Container */
+    .app-body {
       display: grid;
-      grid-template-columns: 1fr 380px;
-      height: calc(100vh - 65px);
-    }
-
-    .viewport {
-      display: flex;
-      flex-direction: column;
-      border-right: 1px solid var(--border-color);
+      grid-template-columns: 1fr 440px;
+      flex: 1;
+      height: calc(100vh - 58px);
       position: relative;
     }
 
-    .toolbar {
-      padding: 0.75rem 1.5rem;
-      background: rgba(30, 41, 59, 0.7);
-      backdrop-filter: blur(8px);
-      border-bottom: 1px solid var(--border-color);
+    /* Left Canvas Viewport */
+    .canvas-viewport {
+      position: relative;
+      background-color: var(--bg-base);
+      background-image: 
+        radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.03) 0%, transparent 80%),
+        radial-gradient(#1e293b 1px, transparent 1px);
+      background-size: 100% 100%, 28px 28px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Floating Toolbar */
+    .viewport-controls {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      right: 1rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      z-index: 10;
+      z-index: 50;
+      pointer-events: none;
     }
 
-    .level-pills {
+    .controls-group {
+      pointer-events: auto;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 0.35rem;
       display: flex;
-      gap: 0.5rem;
+      gap: 0.35rem;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
     }
 
-    .level-pill {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
+    .c4-btn {
+      background: transparent;
+      border: 1px solid transparent;
       color: var(--text-muted);
       padding: 0.35rem 0.75rem;
       border-radius: 6px;
-      font-size: 0.8rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .level-pill.active {
-      background: var(--accent);
-      color: #0f172a;
+      font-size: 0.75rem;
       font-weight: 600;
-      border-color: var(--accent);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
     }
 
-    .canvas-container {
+    .c4-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .c4-btn.active {
+      background: var(--cyan-bg);
+      color: var(--cyan-glow);
+      border-color: rgba(56, 189, 248, 0.3);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+    }
+
+    .search-box {
+      pointer-events: auto;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 0.25rem 0.65rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .search-box input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-main);
+      font-size: 0.8rem;
+      width: 180px;
+    }
+
+    .search-box input::placeholder {
+      color: var(--text-dim);
+    }
+
+    /* Canvas Area */
+    .infinite-canvas {
       flex: 1;
       overflow: auto;
-      padding: 2rem;
       position: relative;
-      background: radial-gradient(#334155 1px, transparent 1px);
-      background-size: 24px 24px;
+      cursor: grab;
     }
 
-    .graph-canvas {
-      position: relative;
-      min-width: 1000px;
-      min-height: 700px;
+    .infinite-canvas:active {
+      cursor: grabbing;
     }
 
-    .node-card {
+    .graph-stage {
+      position: relative;
+      min-width: 1400px;
+      min-height: 1000px;
+      transform-origin: 0 0;
+      transition: transform 0.1s ease-out;
+    }
+
+    svg.connections-layer {
       position: absolute;
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 0.75rem 1rem;
-      width: 220px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Node Cards */
+    .c4-node {
+      position: absolute;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      width: 250px;
+      padding: 0.85rem 1rem;
       cursor: pointer;
-      transition: all 0.2s ease;
+      z-index: 2;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .node-card:hover {
-      border-color: var(--accent);
+    .c4-node:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--cyan-glow);
       transform: translateY(-2px);
-      box-shadow: 0 8px 12px -2px rgba(56, 189, 248, 0.2);
+      box-shadow: 0 10px 24px rgba(56, 189, 248, 0.2);
     }
 
-    .node-card.selected {
-      border-color: var(--accent);
-      outline: 2px solid var(--accent);
+    .c4-node.selected {
+      border-color: var(--cyan-glow);
+      box-shadow: 0 0 0 2px var(--cyan-glow), 0 12px 28px rgba(56, 189, 248, 0.25);
     }
 
-    .node-kind {
-      font-size: 0.65rem;
-      text-transform: uppercase;
+    .node-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.4rem;
+    }
+
+    .kind-pill {
+      font-size: 0.62rem;
       font-weight: 700;
-      color: var(--accent);
-      margin-bottom: 0.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
     }
 
-    .node-label {
-      font-size: 0.85rem;
+    .kind-ROUTE { background: var(--cyan-bg); color: var(--cyan-glow); }
+    .kind-MODEL { background: var(--purple-bg); color: var(--purple-accent); }
+    .kind-COMPONENT { background: var(--emerald-bg); color: var(--emerald); }
+    .kind-SYSTEM { background: var(--amber-bg); color: var(--amber); }
+    .kind-DATABASE { background: rgba(239, 68, 68, 0.12); color: var(--rose); }
+
+    .node-title {
+      font-size: 0.88rem;
       font-weight: 600;
-      color: var(--text);
+      color: var(--text-main);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-bottom: 0.45rem;
+    }
+
+    .node-tech-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .tech-tag {
+      font-size: 0.65rem;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+      color: var(--text-muted);
+    }
+
+    .node-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding-top: 0.45rem;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+    }
+
+    .node-footer .evidence-hint {
+      color: var(--cyan-glow);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    /* Zoom / Canvas Tool Floating at Bottom Left */
+    .floating-viewport-tools {
+      position: absolute;
+      bottom: 1.25rem;
+      left: 1.25rem;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      display: flex;
+      gap: 0.25rem;
+      padding: 0.3rem;
+      z-index: 50;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    .tool-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      transition: all 0.15s;
+    }
+
+    .tool-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+    }
+
+    /* Right Sidebar Inspector */
+    .sidebar-panel {
+      background: var(--bg-surface);
+      border-left: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 60;
+    }
+
+    .tab-bar {
+      display: flex;
+      background: rgba(0, 0, 0, 0.2);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0.35rem 0.5rem 0;
+      gap: 0.25rem;
+    }
+
+    .tab-item {
+      padding: 0.55rem 0.85rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .tab-item:hover {
+      color: var(--text-muted);
+    }
+
+    .tab-item.active {
+      color: var(--cyan-glow);
+      border-bottom-color: var(--cyan-glow);
+    }
+
+    .tab-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem;
+      display: none;
+    }
+
+    .tab-content.active {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* Truth Card & Ring Meter */
+    .truth-meter-card {
+      background: linear-gradient(145deg, var(--bg-card), rgba(15, 23, 42, 0.6));
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .truth-meter-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.08), transparent 70%);
+      pointer-events: none;
+    }
+
+    .gauge-wrapper {
+      position: relative;
+      width: 84px;
+      height: 84px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gauge-svg {
+      transform: rotate(-90deg);
+      width: 84px;
+      height: 84px;
+    }
+
+    .gauge-bg {
+      fill: none;
+      stroke: var(--border-subtle);
+      stroke-width: 8;
+    }
+
+    .gauge-fill {
+      fill: none;
+      stroke: var(--cyan-glow);
+      stroke-width: 8;
+      stroke-linecap: round;
+      stroke-dasharray: 226;
+      stroke-dashoffset: 60;
+      transition: stroke-dashoffset 0.8s ease;
+    }
+
+    .gauge-text {
+      position: absolute;
+      font-size: 1.3rem;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      color: var(--text-main);
+    }
+
+    .truth-breakdown {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      flex: 1;
+    }
+
+    .truth-breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+    }
+
+    .truth-breakdown-row span:first-child {
+      color: var(--text-muted);
+    }
+
+    .truth-breakdown-row span:last-child {
+      font-weight: 700;
+      font-family: var(--font-mono);
+    }
+
+    /* Section Headers */
+    .section-title {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      font-weight: 700;
+      color: var(--text-dim);
+      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Evidence Code Box */
+    .code-viewer-container {
+      background: #06090f;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      overflow: hidden;
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+    }
+
+    .code-viewer-header {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 0.5rem 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .code-viewer-content {
+      padding: 0.85rem;
+      max-height: 280px;
+      overflow: auto;
+      white-space: pre;
+      color: #7dd3fc;
+      line-height: 1.5;
+    }
+
+    /* Endpoints Catalog List */
+    .routes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      max-height: 480px;
+      overflow-y: auto;
+    }
+
+    .route-item {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 0.6rem 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .route-item:hover {
+      background: rgba(56, 189, 248, 0.05);
+      border-color: var(--cyan-glow);
+    }
+
+    .method-badge {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      min-width: 48px;
+      text-align: center;
+    }
+
+    .method-GET { background: var(--emerald-bg); color: var(--emerald); }
+    .method-POST { background: var(--cyan-bg); color: var(--cyan-glow); }
+    .method-PUT { background: var(--amber-bg); color: var(--amber); }
+    .method-DELETE { background: var(--rose-bg); color: var(--rose); }
+
+    .route-path {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-main);
+      flex: 1;
+      margin: 0 0.6rem;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
-    .node-meta {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      margin-top: 0.35rem;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .sidebar {
-      background: var(--card-bg);
-      overflow-y: auto;
+    /* Claims List */
+    .claims-list {
       display: flex;
       flex-direction: column;
+      gap: 0.5rem;
     }
 
-    .sidebar-section {
-      padding: 1.25rem;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .sidebar-title {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      margin-bottom: 0.75rem;
-    }
-
-    .truth-dial {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      background: rgba(15, 23, 42, 0.5);
-      padding: 1rem;
-      border-radius: 8px;
-      border: 1px solid var(--border-color);
-    }
-
-    .dial-score {
-      font-size: 2rem;
-      font-weight: 800;
-      color: var(--accent);
-      line-height: 1;
-    }
-
-    .dial-meta {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
-    .evidence-box {
-      background: #090d16;
-      border: 1px solid #1e293b;
+    .claim-item {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
       border-radius: 6px;
-      padding: 0.75rem;
-      font-family: monospace;
+      padding: 0.65rem 0.85rem;
       font-size: 0.75rem;
-      color: #38bdf8;
-      max-height: 250px;
-      overflow: auto;
-      white-space: pre;
     }
 
-    .badge {
-      display: inline-block;
-      padding: 0.15rem 0.4rem;
-      border-radius: 4px;
-      font-size: 0.65rem;
-      font-weight: 600;
+    .claim-item.CONTRADICTED {
+      border-left: 3px solid var(--rose);
+      background: rgba(244, 63, 94, 0.03);
     }
 
-    .badge-verified { background: rgba(34, 197, 94, 0.2); color: var(--success); }
-    .badge-outdated { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
-    .badge-contradicted { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+    .claim-item.VERIFIED {
+      border-left: 3px solid var(--emerald);
+    }
+
+    .claim-item.OUTDATED {
+      border-left: 3px solid var(--amber);
+    }
+
+    .claim-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.3rem;
+      font-size: 0.68rem;
+    }
+
+    .claim-text {
+      color: var(--text-main);
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+
+    .claim-explanation {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: var(--text-dim);
+      font-size: 0.82rem;
+    }
   </style>
 </head>
 <body>
 
+  <!-- Top App Navigation -->
   <header>
-    <div class="brand">
-      <h1>RepoPulse</h1>
-      <span>Living Architecture Cartographer & Truth Engine</span>
+    <div class="brand-section">
+      <a href="/" class="logo-badge">
+        <div class="radar-icon"></div>
+        <div class="brand-title">RepoPulse</div>
+      </a>
+      <div class="target-repo-tag" id="repoTargetTag">
+        <span class="dot"></span>
+        <span id="repoNameLabel">Analyzing...</span>
+      </div>
     </div>
-    <div class="stats-bar" id="statsBar">
-      <div class="stat-item">
-        <span>Files</span>
-        <span id="statFiles">--</span>
+
+    <!-- Live Counter Metrics -->
+    <div class="header-stats">
+      <div class="stat-chip">
+        <span class="stat-label">Files Scanned</span>
+        <span class="stat-value" id="hdrFiles">--</span>
       </div>
-      <div class="stat-item">
-        <span>Total LOC</span>
-        <span id="statLoc">--</span>
+      <div class="stat-chip">
+        <span class="stat-label">Total Codebase</span>
+        <span class="stat-value" id="hdrLoc">--</span>
       </div>
-      <div class="stat-item">
-        <span>Routes</span>
-        <span id="statRoutes">--</span>
+      <div class="stat-chip">
+        <span class="stat-label">API Endpoints</span>
+        <span class="stat-value" id="hdrRoutes" style="color: var(--cyan-glow);">--</span>
       </div>
-      <div class="stat-item">
-        <span>Truth Score</span>
-        <span id="statTruth" style="color: var(--accent);">--%</span>
+      <div class="stat-chip">
+        <span class="stat-label">Truth Score</span>
+        <span class="stat-value" id="hdrTruth" style="color: var(--emerald);">--%</span>
       </div>
+    </div>
+
+    <!-- Header Actions -->
+    <div class="header-actions">
+      <button class="btn-ghost" onclick="triggerRescan()" title="Re-scan codebase">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+        Re-scan
+      </button>
+      <a href="https://github.com/monkey9-Cyber-cat-Spidy/repopulse" target="_blank" class="btn-ghost" style="text-decoration:none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub
+      </a>
     </div>
   </header>
 
-  <div class="main-layout">
-    <!-- Viewport with Interactive Canvas -->
-    <div class="viewport">
-      <div class="toolbar">
-        <div class="level-pills">
-          <button class="level-pill" onclick="loadGraph(1)">L1 Context</button>
-          <button class="level-pill" onclick="loadGraph(2)">L2 Container</button>
-          <button class="level-pill active" onclick="loadGraph(3)">L3 Component</button>
-          <button class="level-pill" onclick="loadGraph(4)">L4 Code</button>
+  <!-- Main Viewport Layout -->
+  <div class="app-body">
+    
+    <!-- Left Architecture Canvas Viewport -->
+    <div class="canvas-viewport">
+      
+      <!-- Top Level Toolbar & Search -->
+      <div class="viewport-controls">
+        <div class="controls-group">
+          <button class="c4-btn" onclick="switchLevel(1)" id="btnL1">L1 Context</button>
+          <button class="c4-btn" onclick="switchLevel(2)" id="btnL2">L2 Container</button>
+          <button class="c4-btn active" onclick="switchLevel(3)" id="btnL3">L3 Component</button>
+          <button class="c4-btn" onclick="switchLevel(4)" id="btnL4">L4 Code</button>
         </div>
-        <span style="font-size: 0.75rem; color: var(--text-muted);" id="graphMeta">Loading architecture map...</span>
+
+        <div class="search-box">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="nodeSearchInput" placeholder="Filter nodes or routes..." oninput="handleSearch(this.value)">
+        </div>
       </div>
 
-      <div class="canvas-container" id="canvasContainer">
-        <svg id="svgEdges" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></svg>
-        <div class="graph-canvas" id="graphCanvas"></div>
+      <!-- Infinite Canvas Stage -->
+      <div class="infinite-canvas" id="canvasScrollArea">
+        <div class="graph-stage" id="graphStage">
+          <!-- Connection Lines SVG Layer -->
+          <svg class="connections-layer" id="svgConnections">
+            <defs>
+              <linearGradient id="edgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.6"/>
+                <stop offset="100%" stop-color="#c084fc" stop-opacity="0.8"/>
+              </linearGradient>
+              <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#475569"/>
+              </marker>
+              <marker id="arrowActive" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8"/>
+              </marker>
+            </defs>
+          </svg>
+
+          <!-- Node Cards Layer -->
+          <div id="nodesLayer"></div>
+        </div>
       </div>
+
+      <!-- Bottom Floating Zoom Tools -->
+      <div class="floating-viewport-tools">
+        <button class="tool-btn" onclick="zoomCanvas(1.15)" title="Zoom In">+</button>
+        <button class="tool-btn" onclick="zoomCanvas(0.85)" title="Zoom Out">−</button>
+        <button class="tool-btn" onclick="resetZoom()" title="Reset Zoom">↺</button>
+      </div>
+
     </div>
 
-    <!-- Evidence & Truth Sidebar -->
-    <div class="sidebar">
-      <!-- Section 1: Truth Scorecard -->
-      <div class="sidebar-section">
-        <div class="sidebar-title">Documentation Truth Score</div>
-        <div class="truth-dial">
-          <div class="dial-score" id="dialScore">--%</div>
-          <div class="dial-meta">
-            <div><strong id="verifiedCount">0</strong> Verified Claims</div>
-            <div><strong id="outdatedCount">0</strong> Outdated Claims</div>
-            <div><strong id="contradictedCount">0</strong> Contradictions</div>
-            <div><strong id="undocCount">0</strong> Undocumented Systems</div>
+    <!-- Right Sidebar Inspector -->
+    <div class="sidebar-panel">
+      <!-- Tabs Bar -->
+      <div class="tab-bar">
+        <div class="tab-item active" onclick="switchTab('evidence')">Evidence</div>
+        <div class="tab-item" onclick="switchTab('truth')">Truth Score</div>
+        <div class="tab-item" onclick="switchTab('routes')">Routes (<span id="tabRouteCount">0</span>)</div>
+        <div class="tab-item" onclick="switchTab('metrics')">Metrics</div>
+      </div>
+
+      <!-- Tab 1: Evidence Inspector -->
+      <div class="tab-content active" id="tab-evidence">
+        <div id="evidencePlaceholder" class="empty-state">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:0.75rem; color: var(--border-strong);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <p><strong>Evidence Before Intelligence</strong></p>
+          <p style="margin-top: 0.35rem; font-size: 0.74rem;">Click any component or route on the architecture map to inspect verified source code lines and AST evidence.</p>
+        </div>
+
+        <div id="evidenceDetails" style="display: none; flex-direction: column; gap: 1rem;">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.35rem;">
+              <span class="kind-pill" id="detailKind">COMPONENT</span>
+              <span style="font-size: 0.7rem; color: var(--text-dim); font-family: var(--font-mono);" id="detailC4Level">C4 Level 3</span>
+            </div>
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-main);" id="detailLabel">Target Node</h3>
+          </div>
+
+          <div style="font-size: 0.75rem; color: var(--text-muted); display:flex; flex-direction:column; gap:0.25rem;">
+            <div><strong>Physical Path:</strong> <span id="detailPath" style="font-family: var(--font-mono); color: var(--text-main);">--</span></div>
+            <div><strong>Lines:</strong> <span id="detailLines" style="font-family: var(--font-mono); color: var(--cyan-glow);">--</span></div>
+          </div>
+
+          <!-- Code Snippet Box -->
+          <div class="code-viewer-container">
+            <div class="code-viewer-header">
+              <span>Source Evidence Proof</span>
+              <button class="btn-ghost" style="padding: 0.2rem 0.5rem; font-size: 0.65rem;" onclick="copyEvidenceSnippet()">Copy</button>
+            </div>
+            <div class="code-viewer-content" id="detailCode"></div>
+          </div>
+
+          <!-- Action Button: Generate Characterization Test -->
+          <div>
+            <button class="btn-primary" style="width: 100%;" onclick="requestCharacterizationTest()">
+              ⚡ Synthesize Characterization Test
+            </button>
+          </div>
+
+          <!-- Generated Test Output Container -->
+          <div id="testOutputBox" style="display: none;" class="code-viewer-container">
+            <div class="code-viewer-header" style="background: rgba(56, 189, 248, 0.08); color: var(--cyan-glow);">
+              <span>Generated Vitest Suite</span>
+              <button class="btn-ghost" style="padding: 0.2rem 0.5rem; font-size: 0.65rem;" onclick="copyGeneratedTest()">Copy Test</button>
+            </div>
+            <div class="code-viewer-content" id="testOutputCode" style="color: #a7f3d0;"></div>
           </div>
         </div>
       </div>
 
-      <!-- Section 2: Selected Node Evidence -->
-      <div class="sidebar-section" style="flex: 1;">
-        <div class="sidebar-title">Evidence Inspector</div>
-        <div id="evidencePanel">
-          <p style="font-size: 0.8rem; color: var(--text-muted);">
-            Click any component or route in the architecture canvas to inspect its immutable AST evidence pointer and verified source code lines.
-          </p>
+      <!-- Tab 2: Documentation Truth Scorecard -->
+      <div class="tab-content" id="tab-truth">
+        <div class="truth-meter-card">
+          <div class="gauge-wrapper">
+            <svg class="gauge-svg" viewBox="0 0 84 84">
+              <circle class="gauge-bg" cx="42" cy="42" r="36"/>
+              <circle class="gauge-fill" id="gaugeCircle" cx="42" cy="42" r="36"/>
+            </svg>
+            <div class="gauge-text" id="gaugeValue">0%</div>
+          </div>
+          <div class="truth-breakdown">
+            <div class="truth-breakdown-row">
+              <span>Verified Claims</span>
+              <span id="txtVerified" style="color: var(--emerald);">0</span>
+            </div>
+            <div class="truth-breakdown-row">
+              <span>Outdated Claims</span>
+              <span id="txtOutdated" style="color: var(--amber);">0</span>
+            </div>
+            <div class="truth-breakdown-row">
+              <span>Contradictions</span>
+              <span id="txtContradicted" style="color: var(--rose);">0</span>
+            </div>
+            <div class="truth-breakdown-row">
+              <span>Undocumented Systems</span>
+              <span id="txtUndoc" style="color: var(--purple-accent);">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-title">Audited Documentation Claims</div>
+          <div class="claims-list" id="claimsContainer"></div>
         </div>
       </div>
+
+      <!-- Tab 3: API Route Catalog -->
+      <div class="tab-content" id="tab-routes">
+        <div class="section-title">
+          <span>Discovered HTTP Endpoints</span>
+          <span style="font-size: 0.7rem; color: var(--cyan-glow);" id="routeCounterLabel">0 Routes</span>
+        </div>
+        <div class="routes-list" id="routesListContainer"></div>
+      </div>
+
+      <!-- Tab 4: Architecture Metrics -->
+      <div class="tab-content" id="tab-metrics">
+        <div style="display:flex; flex-direction:column; gap: 0.75rem;">
+          <div class="truth-breakdown-row" style="background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: 6px;">
+            <span>Cycles Detected</span>
+            <span id="metricCycles" style="color: var(--emerald);">0 (Clean DAG)</span>
+          </div>
+          <div class="truth-breakdown-row" style="background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: 6px;">
+            <span>Scan Time</span>
+            <span id="metricScanTime">-- ms</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-title">Most Coupled / Foundational Modules</div>
+          <div id="centralityList" style="display: flex; flex-direction: column; gap: 0.35rem;"></div>
+        </div>
+      </div>
+
     </div>
   </div>
 
   <script>
-    let currentLevel = 3;
-    let graphData = null;
+    let currentC4Level = 3;
+    let rawGraphData = null;
+    let selectedNode = null;
+    let currentZoom = 1.0;
+    let currentRoutes = [];
 
-    async function init() {
-      // 1. Load scan metadata
-      const scanRes = await fetch('/api/scan');
-      const scan = await scanRes.json();
-      document.getElementById('statFiles').innerText = scan.totalFiles;
-      document.getElementById('statLoc').innerText = scan.totalLOC.toLocaleString();
-      document.getElementById('statRoutes').innerText = scan.routesCount;
+    async function initApp() {
+      try {
+        // 1. Fetch metadata
+        const scanRes = await fetch('/api/scan');
+        const scan = await scanRes.json();
 
-      // 2. Load Truth Score
-      const truthRes = await fetch('/api/truth');
-      const truth = await truthRes.json();
-      document.getElementById('statTruth').innerText = `${truth.truthScore}%`;
-      document.getElementById('dialScore').innerText = `${truth.truthScore}%`;
-      document.getElementById('verifiedCount').innerText = truth.breakdown.verified;
-      document.getElementById('outdatedCount').innerText = truth.breakdown.outdated;
-      document.getElementById('contradictedCount').innerText = truth.breakdown.contradicted;
-      document.getElementById('undocCount').innerText = truth.breakdown.undocumented;
+        document.getElementById('repoNameLabel').innerText = scan.repositoryName;
+        document.getElementById('hdrFiles').innerText = scan.totalFiles;
+        document.getElementById('hdrLoc').innerText = scan.totalLOC.toLocaleString();
+        document.getElementById('hdrRoutes').innerText = scan.routesCount;
+        document.getElementById('metricScanTime').innerText = `${scan.durationMs} ms`;
 
-      // 3. Load Level 3 Component Graph
-      loadGraph(3);
+        // 2. Fetch Truth Score
+        const truthRes = await fetch('/api/truth');
+        const truth = await truthRes.json();
+        renderTruthReport(truth);
+
+        // 3. Fetch Routes Catalog
+        const routesRes = await fetch('/api/routes');
+        currentRoutes = await routesRes.json();
+        renderRoutesList(currentRoutes);
+
+        // 4. Load Level 3 Graph
+        await switchLevel(3);
+      } catch (err) {
+        console.error('Failed to initialize RepoPulse:', err);
+      }
     }
 
-    async function loadGraph(level) {
-      currentLevel = level;
-      document.querySelectorAll('.level-pill').forEach((btn, idx) => {
-        btn.classList.toggle('active', idx + 1 === level);
-      });
+    async function switchLevel(level) {
+      currentC4Level = level;
+      for (let i = 1; i <= 4; i++) {
+        const btn = document.getElementById(`btnL${i}`);
+        if (btn) btn.classList.toggle('active', i === level);
+      }
 
-      document.getElementById('graphMeta').innerText = `Loading C4 Level ${level}...`;
       const res = await fetch(`/api/graph?level=${level}`);
-      graphData = await res.json();
-
-      document.getElementById('graphMeta').innerText = `${graphData.nodes.length} nodes · ${graphData.edges.length} connections · ${graphData.metrics.cyclesDetected} cycles`;
-      renderGraph(graphData);
+      rawGraphData = await res.json();
+      renderCanvasGraph(rawGraphData);
+      renderMetrics(rawGraphData.metrics);
     }
 
-    function renderGraph(data) {
-      const canvas = document.getElementById('graphCanvas');
-      canvas.innerHTML = '';
-      const svg = document.getElementById('svgEdges');
-      svg.innerHTML = '';
+    function renderCanvasGraph(data) {
+      const nodesLayer = document.getElementById('nodesLayer');
+      const svgLayer = document.getElementById('svgConnections');
+      nodesLayer.innerHTML = '';
+      
+      // Preserve SVG defs
+      const defs = svgLayer.querySelector('defs');
+      svgLayer.innerHTML = '';
+      if (defs) svgLayer.appendChild(defs);
 
-      // Normalize offsets
+      // Auto offset
       let minX = Infinity, minY = Infinity;
       data.nodes.forEach(n => {
         if (n.position.x < minX) minX = n.position.x;
         if (n.position.y < minY) minY = n.position.y;
       });
-      const offsetX = Math.max(40, -minX + 40);
-      const offsetY = Math.max(40, -minY + 40);
+      const offsetX = Math.max(60, -minX + 60);
+      const offsetY = Math.max(70, -minY + 70);
 
       // Render Nodes
       data.nodes.forEach(node => {
         const div = document.createElement('div');
-        div.className = 'node-card';
+        div.className = 'c4-node';
+        div.id = `node-${sanitizeId(node.id)}`;
         div.style.left = `${node.position.x + offsetX}px`;
         div.style.top = `${node.position.y + offsetY}px`;
+
+        const kindClass = `kind-${node.data.kind || 'COMPONENT'}`;
+        const techTags = (node.data.technologies || []).slice(0, 3).map(t => `<span class="tech-tag">${escapeHtml(t)}</span>`).join('');
+
         div.innerHTML = `
-          <div class="node-kind">${node.data.kind}</div>
-          <div class="node-label" title="${node.data.label}">${node.data.label}</div>
-          <div class="node-meta">
-            <span>${node.data.technologies.slice(0, 2).join(', ') || 'Code'}</span>
-            <span>${node.data.loc ? node.data.loc + ' LOC' : ''}</span>
+          <div class="node-header">
+            <span class="kind-pill ${kindClass}">${escapeHtml(node.data.kind || 'NODE')}</span>
+            <span style="font-size:0.65rem; color:var(--text-dim);">${node.data.loc ? node.data.loc + ' LOC' : ''}</span>
+          </div>
+          <div class="node-title" title="${escapeHtml(node.data.label)}">${escapeHtml(node.data.label)}</div>
+          <div class="node-tech-row">${techTags}</div>
+          <div class="node-footer">
+            <span>In: ${node.data.metrics?.inDegree || 0} / Out: ${node.data.metrics?.outDegree || 0}</span>
+            <span class="evidence-hint">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              Evidence
+            </span>
           </div>
         `;
+
         div.onclick = () => selectNode(node);
-        canvas.appendChild(div);
+        nodesLayer.appendChild(div);
       });
 
-      // Render Edges
-      data.edges.forEach(edge => {
-        const sourceNode = data.nodes.find(n => n.id === edge.source);
-        const targetNode = data.nodes.find(n => n.id === edge.target);
-        if (sourceNode && targetNode) {
-          const x1 = sourceNode.position.x + offsetX + 110;
-          const y1 = sourceNode.position.y + offsetY + 40;
-          const x2 = targetNode.position.x + offsetX + 110;
-          const y2 = targetNode.position.y + offsetY + 40;
+      // Render Curved Connections
+      data.edges.forEach((edge, idx) => {
+        const s = data.nodes.find(n => n.id === edge.source);
+        const t = data.nodes.find(n => n.id === edge.target);
+        if (s && t) {
+          const x1 = s.position.x + offsetX + 125;
+          const y1 = s.position.y + offsetY + 45;
+          const x2 = t.position.x + offsetX + 125;
+          const y2 = t.position.y + offsetY + 45;
 
-          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-          line.setAttribute('x1', x1);
-          line.setAttribute('y1', y1);
-          line.setAttribute('x2', x2);
-          line.setAttribute('y2', y2);
-          line.setAttribute('stroke', '#334155');
-          line.setAttribute('stroke-width', '1.5');
-          line.setAttribute('stroke-dasharray', edge.animated ? '4,4' : 'none');
-          svg.appendChild(line);
+          const dx = x2 - x1;
+          const dy = y2 - y1;
+          const cx1 = x1 + dx * 0.5;
+          const cy1 = y1;
+          const cx2 = x1 + dx * 0.5;
+          const cy2 = y2;
+
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          path.setAttribute('d', `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`);
+          path.setAttribute('fill', 'none');
+          path.setAttribute('stroke', '#334155');
+          path.setAttribute('stroke-width', '1.5');
+          path.setAttribute('marker-end', 'url(#arrow)');
+          path.id = `edge-${idx}`;
+          svgLayer.appendChild(path);
         }
       });
     }
 
     function selectNode(node) {
-      const panel = document.getElementById('evidencePanel');
-      panel.innerHTML = `
-        <h4 style="font-size: 0.95rem; margin-bottom: 0.25rem;">${node.data.label}</h4>
-        <div style="margin-bottom: 0.75rem;">
-          <span class="badge badge-verified">C4 LEVEL ${node.data.c4Level}</span>
-          <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">${node.data.kind}</span>
-        </div>
-        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">
-          <strong>File:</strong> ${node.data.filePath || 'System Boundary'}
-          ${node.data.startLine ? '<br><strong>Lines:</strong> ' + node.data.startLine + ' - ' + node.data.endLine : ''}
-        </p>
-        <div class="sidebar-title">Source Evidence</div>
-        <div class="evidence-box">${escapeHtml(node.data.evidence?.codeSnippet || '// Verified AST symbol representation: ' + node.data.label)}</div>
-      `;
+      selectedNode = node;
+
+      // Update Selection Styling
+      document.querySelectorAll('.c4-node').forEach(el => el.classList.remove('selected'));
+      const card = document.getElementById(`node-${sanitizeId(node.id)}`);
+      if (card) card.classList.add('selected');
+
+      // Highlight connections
+      const svgLayer = document.getElementById('svgConnections');
+      svgLayer.querySelectorAll('path').forEach(p => {
+        p.setAttribute('stroke', '#334155');
+        p.setAttribute('stroke-width', '1.5');
+        p.setAttribute('marker-end', 'url(#arrow)');
+      });
+
+      if (rawGraphData) {
+        rawGraphData.edges.forEach((edge, idx) => {
+          if (edge.source === node.id || edge.target === node.id) {
+            const p = document.getElementById(`edge-${idx}`);
+            if (p) {
+              p.setAttribute('stroke', '#38bdf8');
+              p.setAttribute('stroke-width', '2.5');
+              p.setAttribute('marker-end', 'url(#arrowActive)');
+            }
+          }
+        });
+      }
+
+      // Populate Evidence Inspector
+      document.getElementById('evidencePlaceholder').style.display = 'none';
+      const details = document.getElementById('evidenceDetails');
+      details.style.display = 'flex';
+
+      document.getElementById('detailLabel').innerText = node.data.label;
+      document.getElementById('detailKind').innerText = node.data.kind;
+      document.getElementById('detailKind').className = `kind-pill kind-${node.data.kind}`;
+      document.getElementById('detailC4Level').innerText = `C4 Level ${node.data.c4Level}`;
+      document.getElementById('detailPath').innerText = node.data.filePath || 'System Root';
+      document.getElementById('detailLines').innerText = node.data.startLine ? `Lines ${node.data.startLine} - ${node.data.endLine}` : 'Top-level declaration';
+
+      const snippet = node.data.evidence?.codeSnippet || `// Discovered AST node representation: ${node.data.label}\n// Type: ${node.data.kind}\n// Verified file: ${node.data.filePath || 'Root'}`;
+      document.getElementById('detailCode').innerText = snippet;
+
+      // Reset test output box
+      document.getElementById('testOutputBox').style.display = 'none';
+
+      // Switch to Evidence Tab
+      switchTab('evidence');
+    }
+
+    function renderTruthReport(truth) {
+      const score = Math.round(truth.truthScore || 0);
+      document.getElementById('hdrTruth').innerText = `${score}%`;
+      document.getElementById('gaugeValue').innerText = `${score}%`;
+
+      // Animate SVG Gauge
+      const circle = document.getElementById('gaugeCircle');
+      const offset = 226 - (226 * score) / 100;
+      circle.style.strokeDashoffset = offset;
+
+      document.getElementById('txtVerified').innerText = truth.breakdown.verified;
+      document.getElementById('txtOutdated').innerText = truth.breakdown.outdated;
+      document.getElementById('txtContradicted').innerText = truth.breakdown.contradicted;
+      document.getElementById('txtUndoc').innerText = truth.breakdown.undocumented;
+
+      // Render Claims List
+      const container = document.getElementById('claimsContainer');
+      container.innerHTML = '';
+
+      truth.claims.forEach(claim => {
+        const div = document.createElement('div');
+        div.className = `claim-item ${claim.status}`;
+        div.innerHTML = `
+          <div class="claim-header">
+            <span style="font-weight:700; color:var(--text-dim);">${escapeHtml(claim.category)}</span>
+            <span class="kind-pill kind-${claim.status === 'VERIFIED' ? 'COMPONENT' : 'DATABASE'}">${claim.status}</span>
+          </div>
+          <div class="claim-text">"${escapeHtml(claim.rawText)}"</div>
+          <div class="claim-explanation">${escapeHtml(claim.explanation)}</div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function renderRoutesList(routes) {
+      document.getElementById('tabRouteCount').innerText = routes.length;
+      document.getElementById('routeCounterLabel').innerText = `${routes.length} Endpoints`;
+
+      const container = document.getElementById('routesListContainer');
+      container.innerHTML = '';
+
+      routes.forEach(route => {
+        const div = document.createElement('div');
+        div.className = 'route-item';
+        div.innerHTML = `
+          <span class="method-badge method-${route.httpMethod}">${route.httpMethod}</span>
+          <span class="route-path" title="${escapeHtml(route.fullPath)}">${escapeHtml(route.fullPath)}</span>
+          <span style="font-size:0.65rem; color:var(--text-dim); font-family:var(--font-mono);">${route.evidence?.filePath || ''}:${route.evidence?.startLine || ''}</span>
+        `;
+        div.onclick = () => {
+          // Find matching node in graph
+          if (rawGraphData) {
+            const matched = rawGraphData.nodes.find(n => n.id.includes(route.fullPath) || n.data.label.includes(route.fullPath));
+            if (matched) {
+              selectNode(matched);
+            } else {
+              // Focus directly in evidence inspector
+              selectNode({
+                id: route.id,
+                data: {
+                  label: `${route.httpMethod} ${route.fullPath}`,
+                  kind: 'ROUTE',
+                  c4Level: 4,
+                  filePath: route.evidence?.filePath,
+                  startLine: route.evidence?.startLine,
+                  endLine: route.evidence?.endLine,
+                  evidence: route.evidence
+                }
+              });
+            }
+          }
+        };
+        container.appendChild(div);
+      });
+    }
+
+    function renderMetrics(metrics) {
+      if (!metrics) return;
+      document.getElementById('metricCycles').innerText = `${metrics.cyclesDetected} Cycle(s)`;
+      document.getElementById('metricCycles').style.color = metrics.cyclesDetected === 0 ? 'var(--emerald)' : 'var(--rose)';
+
+      const centralityList = document.getElementById('centralityList');
+      centralityList.innerHTML = '';
+      (metrics.centralModules || []).forEach(m => {
+        const div = document.createElement('div');
+        div.className = 'truth-breakdown-row';
+        div.style.padding = '0.45rem 0.6rem';
+        div.style.background = 'rgba(255,255,255,0.02)';
+        div.style.borderRadius = '4px';
+        div.innerHTML = `
+          <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:260px;" title="${escapeHtml(m.label)}">${escapeHtml(m.label)}</span>
+          <span style="color:var(--cyan-glow);">${m.score}</span>
+        `;
+        centralityList.appendChild(div);
+      });
+    }
+
+    async function requestCharacterizationTest() {
+      if (!selectedNode) return;
+      const target = selectedNode.data.label.replace('()', '').trim();
+      const btn = event.target;
+      btn.innerText = 'Synthesizing Test...';
+
+      try {
+        const res = await fetch('/api/test-gen', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target, framework: 'VITEST' })
+        });
+        const plan = await res.json();
+
+        document.getElementById('testOutputBox').style.display = 'block';
+        document.getElementById('testOutputCode').innerText = plan.testCode || plan.error || 'Failed to generate test';
+      } catch (err) {
+        alert('Test synthesis error: ' + err.message);
+      } finally {
+        btn.innerText = '⚡ Synthesize Characterization Test';
+      }
+    }
+
+    async function triggerRescan() {
+      try {
+        const res = await fetch('/api/rescan', { method: 'POST' });
+        await initApp();
+      } catch (err) {
+        console.error('Rescan failed:', err);
+      }
+    }
+
+    function handleSearch(query) {
+      const q = (query || '').toLowerCase().trim();
+      document.querySelectorAll('.c4-node').forEach(nodeCard => {
+        if (!q) {
+          nodeCard.style.opacity = '1';
+          return;
+        }
+        const text = nodeCard.innerText.toLowerCase();
+        nodeCard.style.opacity = text.includes(q) ? '1' : '0.2';
+      });
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+      const activeTabBtn = Array.from(document.querySelectorAll('.tab-item')).find(el => el.innerText.toLowerCase().startsWith(tabId));
+      if (activeTabBtn) activeTabBtn.classList.add('active');
+
+      const targetContent = document.getElementById(`tab-${tabId}`);
+      if (targetContent) targetContent.classList.add('active');
+    }
+
+    function zoomCanvas(factor) {
+      currentZoom *= factor;
+      currentZoom = Math.min(2.0, Math.max(0.4, currentZoom));
+      document.getElementById('graphStage').style.transform = `scale(${currentZoom})`;
+    }
+
+    function resetZoom() {
+      currentZoom = 1.0;
+      document.getElementById('graphStage').style.transform = 'scale(1)';
+    }
+
+    function copyEvidenceSnippet() {
+      const code = document.getElementById('detailCode').innerText;
+      navigator.clipboard.writeText(code);
+      alert('Evidence snippet copied to clipboard!');
+    }
+
+    function copyGeneratedTest() {
+      const code = document.getElementById('testOutputCode').innerText;
+      navigator.clipboard.writeText(code);
+      alert('Generated characterization test copied to clipboard!');
+    }
+
+    function sanitizeId(str) {
+      return (str || '').replace(/[^a-zA-Z0-9_-]/g, '_');
     }
 
     function escapeHtml(str) {
       return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
-    window.onload = init;
+    window.onload = initApp;
   </script>
 </body>
 </html>

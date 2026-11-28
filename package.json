@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build -w @repopulse/scanner && npm run build -w @repopulse/db && npm run build -w @repopulse/graph && npm run build -w @repopulse/truth-engine && npm run build -w @repopulse/mcp-server && npm run build -w @repopulse/cli && npm run build -w @repopulse/web",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
