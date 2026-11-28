@@ -16,7 +16,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3005;
-const TARGET_REPO = process.env.REPO_PATH || path.resolve(__dirname, '../../');
+let currentTargetRepo = process.env.REPO_PATH || path.resolve(__dirname, '../../');
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -26,8 +26,8 @@ let cachedTruth = null;
 
 function getOrComputeScan() {
   if (!cachedScan) {
-    cachedScan = scanRepository(TARGET_REPO);
-    const docPath = path.join(TARGET_REPO, 'README.md');
+    cachedScan = scanRepository(currentTargetRepo);
+    const docPath = path.join(currentTargetRepo, 'README.md');
     const docContent = fs.existsSync(docPath) ? fs.readFileSync(docPath, 'utf8') : '';
     const claims = extractClaimsFromMarkdown(docContent, 'README.md');
     const { verifiedClaims, undocumentedFindings } = verifyClaimsAgainstAST(claims, cachedScan);
@@ -172,7 +172,66 @@ app.post('/api/rescan', (req, res) => {
   res.json({ success: true, totalFiles: scan.totalFiles, truthScore: truth.truthScore });
 });
 
+app.post('/api/repo', (req, res) => {
+  const { repoPath } = req.body || {};
+  if (!repoPath) return res.status(400).json({ error: 'repoPath required' });
+  const resolved = path.resolve(repoPath);
+  if (!fs.existsSync(resolved)) {
+    return res.status(404).json({ error: `Path does not exist: ${resolved}` });
+  }
+  currentTargetRepo = resolved;
+  cachedScan = null;
+  cachedTruth = null;
+  const { scan, truth } = getOrComputeScan();
+  res.json({ success: true, repositoryName: scan.repositoryName, totalFiles: scan.totalFiles, truthScore: truth.truthScore });
+});
+
+app.get('/api/ask', (req, res) => {
+  const q = String(req.query.q || '').trim().toLowerCase();
+  if (!q) return res.json({ query: '', matches: [] });
+  const { scan } = getOrComputeScan();
+  const matches = [];
+
+  for (const r of scan.allRoutes) {
+    if (`${r.httpMethod} ${r.fullPath} ${r.handlerSymbol || ''} ${r.evidence.filePath}`.toLowerCase().includes(q)) {
+      matches.push({
+        type: 'ROUTE',
+        title: `${r.httpMethod} ${r.fullPath}`,
+        filePath: r.evidence.filePath,
+        lines: `${r.evidence.startLine}–${r.evidence.endLine}`,
+        snippet: r.evidence.codeSnippet
+      });
+    }
+  }
+  for (const file of scan.files.values()) {
+    for (const s of file.symbols) {
+      if (`${s.name} ${file.relativePath}`.toLowerCase().includes(q)) {
+        matches.push({
+          type: s.kind,
+          title: `${s.name}()`,
+          filePath: file.relativePath,
+          lines: `${s.evidence.startLine}–${s.evidence.endLine}`,
+          snippet: s.evidence.codeSnippet
+        });
+      }
+    }
+  }
+  for (const ev of scan.allEnvVars) {
+    if (ev.name.toLowerCase().includes(q)) {
+      matches.push({
+        type: 'ENV_VAR',
+        title: `process.env.${ev.name}`,
+        filePath: ev.locations[0]?.filePath || 'config',
+        lines: `${ev.locations[0]?.startLine || 1}`,
+        snippet: ev.locations[0]?.codeSnippet || ''
+      });
+    }
+  }
+
+  res.json({ query: q, totalMatches: matches.length, matches: matches.slice(0, 15) });
+});
+
 app.listen(PORT, () => {
   console.log(`\n🚀 [RepoPulse Web Visualizer] Running at http://localhost:${PORT}`);
-  console.log(`   Inspecting Target Repository: ${TARGET_REPO}\n`);
+  console.log(`   Inspecting Target Repository: ${currentTargetRepo}\n`);
 });

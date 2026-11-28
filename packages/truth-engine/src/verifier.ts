@@ -139,6 +139,42 @@ export function verifyClaimsAgainstAST(
         break;
       }
 
+      case 'ARCHITECTURE': {
+        const refPath = claim.claimedEntity.replace(/^\.\//, '');
+        const matchedFile =
+          scanResult.files.get(refPath) ||
+          Array.from(scanResult.files.values()).find(
+            (f) => f.relativePath.endsWith(`/${refPath}`) || f.relativePath === refPath
+          );
+
+        if (matchedFile) {
+          verifiedClaims.push({
+            ...claim,
+            status: 'VERIFIED',
+            confidence: 1.0,
+            explanation: `Module '${claim.claimedEntity}' verified in repository (${matchedFile.loc} LOC).`,
+            evidence: {
+              filePath: matchedFile.relativePath,
+              startLine: 1,
+              endLine: Math.min(20, matchedFile.loc),
+              startColumn: 0,
+              endColumn: 0,
+              astNodeType: 'FileModule',
+              codeSnippet: `// Verified file: ${matchedFile.relativePath} (${matchedFile.loc} LOC)`,
+              confidence: 1.0
+            }
+          });
+        } else {
+          verifiedClaims.push({
+            ...claim,
+            status: 'OUTDATED',
+            confidence: 0.85,
+            explanation: `Documented module '${claim.claimedEntity}' was not found in scanned repository files.`
+          });
+        }
+        break;
+      }
+
       default: {
         verifiedClaims.push({
           ...claim,
