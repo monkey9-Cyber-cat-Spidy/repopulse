@@ -541,6 +541,7 @@
       gap: 1.25rem;
       position: relative;
       overflow: hidden;
+      flex-shrink: 0;
     }
 
     .truth-meter-card::before {
@@ -1036,6 +1037,12 @@
         if (btn) btn.classList.toggle('active', i === level);
       }
 
+      const scrollArea = document.getElementById('canvasScrollArea');
+      if (scrollArea) {
+        scrollArea.scrollLeft = 0;
+        scrollArea.scrollTop = 0;
+      }
+
       const res = await fetch(`/api/graph?level=${level}`);
       rawGraphData = await res.json();
       renderCanvasGraph(rawGraphData);
@@ -1045,6 +1052,7 @@
     function renderCanvasGraph(data) {
       const nodesLayer = document.getElementById('nodesLayer');
       const svgLayer = document.getElementById('svgConnections');
+      const stage = document.getElementById('graphStage');
       nodesLayer.innerHTML = '';
       
       // Preserve SVG defs
@@ -1052,22 +1060,43 @@
       svgLayer.innerHTML = '';
       if (defs) svgLayer.appendChild(defs);
 
-      // Auto offset
-      let minX = Infinity, minY = Infinity;
-      data.nodes.forEach(n => {
-        if (n.position.x < minX) minX = n.position.x;
-        if (n.position.y < minY) minY = n.position.y;
-      });
-      const offsetX = Math.max(60, -minX + 60);
-      const offsetY = Math.max(70, -minY + 70);
+      // If disconnected graph (like L4 Code with 0 edges), lay out in a clean 3-column grid
+      const useGridLayout = data.edges.length === 0 && data.nodes.length > 4;
+      const computedPositions = new Map();
+
+      if (useGridLayout) {
+        const cols = 3;
+        data.nodes.forEach((n, i) => {
+          const col = i % cols;
+          const row = Math.floor(i / cols);
+          computedPositions.set(n.id, { x: col * 285 + 60, y: row * 145 + 80 });
+        });
+      } else {
+        let minX = Infinity, minY = Infinity;
+        data.nodes.forEach(n => {
+          if (n.position.x < minX) minX = n.position.x;
+          if (n.position.y < minY) minY = n.position.y;
+        });
+        const offsetX = Math.max(60, -minX + 60);
+        const offsetY = Math.max(80, -minY + 80);
+        data.nodes.forEach(n => {
+          computedPositions.set(n.id, { x: n.position.x + offsetX, y: n.position.y + offsetY });
+        });
+      }
+
+      let maxX = 1200, maxY = 800;
 
       // Render Nodes
       data.nodes.forEach(node => {
+        const pos = computedPositions.get(node.id) || { x: 60, y: 80 };
+        if (pos.x + 320 > maxX) maxX = pos.x + 320;
+        if (pos.y + 180 > maxY) maxY = pos.y + 180;
+
         const div = document.createElement('div');
         div.className = 'c4-node';
         div.id = `node-${sanitizeId(node.id)}`;
-        div.style.left = `${node.position.x + offsetX}px`;
-        div.style.top = `${node.position.y + offsetY}px`;
+        div.style.left = `${pos.x}px`;
+        div.style.top = `${pos.y}px`;
 
         const kindClass = `kind-${node.data.kind || 'COMPONENT'}`;
         const techTags = (node.data.technologies || []).slice(0, 3).map(t => `<span class="tech-tag">${escapeHtml(t)}</span>`).join('');
@@ -1092,18 +1121,22 @@
         nodesLayer.appendChild(div);
       });
 
+      if (stage) {
+        stage.style.minWidth = `${maxX}px`;
+        stage.style.minHeight = `${maxY}px`;
+      }
+
       // Render Curved Connections
       data.edges.forEach((edge, idx) => {
-        const s = data.nodes.find(n => n.id === edge.source);
-        const t = data.nodes.find(n => n.id === edge.target);
-        if (s && t) {
-          const x1 = s.position.x + offsetX + 125;
-          const y1 = s.position.y + offsetY + 45;
-          const x2 = t.position.x + offsetX + 125;
-          const y2 = t.position.y + offsetY + 45;
+        const sPos = computedPositions.get(edge.source);
+        const tPos = computedPositions.get(edge.target);
+        if (sPos && tPos) {
+          const x1 = sPos.x + 125;
+          const y1 = sPos.y + 45;
+          const x2 = tPos.x + 125;
+          const y2 = tPos.y + 45;
 
           const dx = x2 - x1;
-          const dy = y2 - y1;
           const cx1 = x1 + dx * 0.5;
           const cy1 = y1;
           const cx2 = x1 + dx * 0.5;
@@ -1160,7 +1193,7 @@
       document.getElementById('detailKind').className = `kind-pill kind-${node.data.kind}`;
       document.getElementById('detailC4Level').innerText = `C4 Level ${node.data.c4Level}`;
       document.getElementById('detailPath').innerText = node.data.filePath || 'System Root';
-      document.getElementById('detailLines').innerText = node.data.startLine ? `Lines ${node.data.startLine} - ${node.data.endLine}` : 'Top-level declaration';
+      document.getElementById('detailLines').innerText = node.data.startLine ? `${node.data.startLine} – ${node.data.endLine}` : 'Top-level declaration';
 
       const snippet = node.data.evidence?.codeSnippet || `// Discovered AST node representation: ${node.data.label}\n// Type: ${node.data.kind}\n// Verified file: ${node.data.filePath || 'Root'}`;
       document.getElementById('detailCode').innerText = snippet;
@@ -1333,6 +1366,11 @@
     function resetZoom() {
       currentZoom = 1.0;
       document.getElementById('graphStage').style.transform = 'scale(1)';
+      const scrollArea = document.getElementById('canvasScrollArea');
+      if (scrollArea) {
+        scrollArea.scrollLeft = 0;
+        scrollArea.scrollTop = 0;
+      }
     }
 
     function copyEvidenceSnippet() {
