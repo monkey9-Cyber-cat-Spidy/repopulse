@@ -69,27 +69,97 @@ app.get('/api/routes', (req, res) => {
 });
 
 app.post('/api/test-gen', (req, res) => {
-  const { target, framework = 'VITEST' } = req.body || {};
+  const { target, filePath, kind, framework = 'VITEST' } = req.body || {};
   if (!target) return res.status(400).json({ error: 'target parameter required' });
 
   const { scan } = getOrComputeScan();
+  const normalizedTarget = target.trim().toLowerCase();
+
+  // 1. Direct Route match
   const route = scan.allRoutes.find(
     (r) =>
-      `${r.httpMethod} ${r.fullPath}`.toLowerCase() === target.toLowerCase() ||
-      r.fullPath.toLowerCase() === target.toLowerCase()
+      `${r.httpMethod} ${r.fullPath}`.toLowerCase() === normalizedTarget ||
+      r.fullPath.toLowerCase() === normalizedTarget
   );
-
   if (route) {
-    const plan = generateCharacterizationTest(route, framework);
-    return res.json(plan);
+    return res.json(generateCharacterizationTest(route, framework));
   }
 
-  for (const file of scan.files.values()) {
-    const sym = file.symbols.find((s) => s.name.toLowerCase() === target.toLowerCase());
-    if (sym) {
-      const plan = generateCharacterizationTest(sym, framework);
-      return res.json(plan);
+  // 2. Symbol match (prefer exact filePath if provided)
+  if (filePath) {
+    for (const file of scan.files.values()) {
+      if (file.relativePath === filePath || file.filePath === filePath) {
+        const sym = file.symbols.find((s) => s.name.toLowerCase() === normalizedTarget);
+        if (sym) {
+          return res.json(generateCharacterizationTest(sym, framework));
+        }
+      }
     }
+  }
+  for (const file of scan.files.values()) {
+    const sym = file.symbols.find((s) => s.name.toLowerCase() === normalizedTarget);
+    if (sym) {
+      return res.json(generateCharacterizationTest(sym, framework));
+    }
+  }
+
+  // 3. File / Component node match (e.g. routes/orders.js, lib/coupons.js, server.js)
+  const fileSummary =
+    scan.files.get(target) ||
+    Array.from(scan.files.values()).find(
+      (f) => f.relativePath.toLowerCase() === normalizedTarget || f.filePath.toLowerCase() === normalizedTarget
+    );
+
+  if (fileSummary) {
+    const fileRoutes = fileSummary.routes.filter((r) => r.httpMethod !== 'USE');
+    if (fileRoutes.length > 0) {
+      const plans = fileRoutes.slice(0, 3).map((r) => generateCharacterizationTest(r, framework));
+      return res.json({
+        targetEntity: fileSummary.relativePath,
+        framework,
+        testCode: plans.map((p) => p.testCode).join('\n'),
+        explanation: `Generated characterization suite for ${fileRoutes.length} route(s) in ${fileSummary.relativePath}.`
+      });
+    }
+
+    const fileSyms = fileSummary.symbols.filter((s) => s.kind === 'FUNCTION' || s.kind === 'CLASS');
+    if (fileSyms.length > 0) {
+      const plans = fileSyms.slice(0, 3).map((s) => generateCharacterizationTest(s, framework));
+      return res.json({
+        targetEntity: fileSummary.relativePath,
+        framework,
+        testCode: plans.map((p) => p.testCode).join('\n'),
+        explanation: `Generated characterization suite for ${fileSyms.length} symbol(s) in ${fileSummary.relativePath}.`
+      });
+    }
+  }
+
+  // 4. System / Container / Database node match (L1/L2)
+  const topRoutes = scan.allRoutes.filter((r) => r.httpMethod !== 'USE').slice(0, 4);
+  if (topRoutes.length > 0) {
+    const entrypoint = scan.entrypoints[0] || 'server.js';
+    const routeChecks = topRoutes
+      .map(
+        (r) => `  it('${r.httpMethod} ${r.fullPath} responds without 500 error', async () => {
+    const res = await request(app).${r.httpMethod.toLowerCase()}('${r.fullPath.replace(/:[a-zA-Z0-9_]+/g, 'test-id')}');
+    expect(res.status).toBeLessThan(500);
+  });`
+      )
+      .join('\n\n');
+
+    return res.json({
+      targetEntity: target,
+      framework,
+      testCode: `import { describe, it, expect } from '${framework === 'VITEST' ? 'vitest' : '@jest/globals'}';
+import request from 'supertest';
+import app from '../${entrypoint}';
+
+describe('System Smoke Characterization: ${target} (${scan.repositoryName})', () => {
+${routeChecks}
+});
+`,
+      explanation: `Generated system-level smoke characterization tests for ${target} covering ${topRoutes.length} core endpoints.`
+    });
   }
 
   return res.status(404).json({ error: `Target '${target}' not found in symbols or routes` });

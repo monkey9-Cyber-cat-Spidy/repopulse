@@ -1312,7 +1312,12 @@
         const res = await fetch('/api/test-gen', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ target, framework: 'VITEST' })
+          body: JSON.stringify({
+            target,
+            filePath: selectedNode.data.filePath,
+            kind: selectedNode.data.kind,
+            framework: 'VITEST'
+          })
         });
         const plan = await res.json();
 
