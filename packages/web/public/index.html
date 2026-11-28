@@ -190,18 +190,36 @@
       overflow: auto;
       position: relative;
       user-select: none;
+      cursor: grab;
+    }
+    .infinite-canvas.panning {
+      cursor: grabbing;
     }
 
     .graph-stage {
       position: relative;
       transform-origin: 0 0;
-      transition: transform 0.12s ease-out;
+      transition: transform 0.08s ease-out;
     }
 
     svg.connections-layer {
       position: absolute; top: 0; left: 0;
       width: 100%; height: 100%;
       pointer-events: none; z-index: 1;
+    }
+    @keyframes edgeFlow {
+      from { stroke-dashoffset: 24; }
+      to { stroke-dashoffset: 0; }
+    }
+    .edge-path {
+      stroke-dasharray: 6 6;
+      animation: edgeFlow 1.4s linear infinite;
+      transition: stroke 0.2s, stroke-width 0.2s;
+    }
+    .edge-path.active {
+      stroke-dasharray: 8 5;
+      animation: edgeFlow 0.65s linear infinite;
+      filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.75));
     }
 
     .c4-node {
@@ -620,9 +638,48 @@
         renderRoutesList(routes);
 
         await switchLevel(currentC4Level);
+        initCanvasPanAndZoom();
       } catch (err) {
         console.error('Failed to initialize RepoPulse:', err);
       }
+    }
+
+    let panInitialized = false;
+    function initCanvasPanAndZoom() {
+      if (panInitialized) return;
+      panInitialized = true;
+      const scrollArea = document.getElementById('canvasScrollArea');
+      if (!scrollArea) return;
+
+      let isPanning = false, startX = 0, startY = 0, origScrollLeft = 0, origScrollTop = 0;
+
+      scrollArea.addEventListener('mousedown', (e) => {
+        if (e.button !== 0 || e.target.closest('.c4-node')) return;
+        isPanning = true;
+        scrollArea.classList.add('panning');
+        startX = e.clientX;
+        startY = e.clientY;
+        origScrollLeft = scrollArea.scrollLeft;
+        origScrollTop = scrollArea.scrollTop;
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!isPanning) return;
+        scrollArea.scrollLeft = origScrollLeft - (e.clientX - startX);
+        scrollArea.scrollTop = origScrollTop - (e.clientY - startY);
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (!isPanning) return;
+        isPanning = false;
+        scrollArea.classList.remove('panning');
+      });
+
+      scrollArea.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const factor = e.deltaY < 0 ? 1.08 : 0.92;
+        zoomCanvas(factor);
+      }, { passive: false });
     }
 
     async function switchTargetRepo() {
@@ -741,14 +798,30 @@
         const dy = Math.max(40, Math.abs(y2 - y1) * 0.5);
 
         const isHighlighted = selectedNode && (edge.source === selectedNode.id || edge.target === selectedNode.id);
+        const dStr = `M ${x1} ${y1} C ${x1} ${y1 + dy}, ${x2} ${y2 - dy}, ${x2} ${y2}`;
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', `M ${x1} ${y1} C ${x1} ${y1 + dy}, ${x2} ${y2 - dy}, ${x2} ${y2}`);
+        path.setAttribute('d', dStr);
         path.setAttribute('fill', 'none');
-        path.setAttribute('stroke', isHighlighted ? '#38bdf8' : '#293548');
-        path.setAttribute('stroke-width', isHighlighted ? '2.4' : '1.4');
+        path.setAttribute('class', isHighlighted ? 'edge-path active' : 'edge-path');
+        path.setAttribute('stroke', isHighlighted ? '#38bdf8' : '#3b4d6b');
+        path.setAttribute('stroke-width', isHighlighted ? '2.5' : '1.6');
         path.setAttribute('marker-end', isHighlighted ? 'url(#arrowActive)' : 'url(#arrow)');
         path.id = `edge-${idx}`;
         svgLayer.appendChild(path);
+
+        // Animated glowing pulse dot traveling along the connection
+        if (isHighlighted || rawGraphData.edges.length <= 50) {
+          const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          dot.setAttribute('r', isHighlighted ? '3.5' : '2.2');
+          dot.setAttribute('fill', isHighlighted ? '#38bdf8' : '#60a5fa');
+          dot.setAttribute('opacity', isHighlighted ? '1' : '0.65');
+          const anim = document.createElementNS('http://www.w3.org/2000/svg', 'animateMotion');
+          anim.setAttribute('dur', isHighlighted ? '1.4s' : '3.2s');
+          anim.setAttribute('repeatCount', 'indefinite');
+          anim.setAttribute('path', dStr);
+          dot.appendChild(anim);
+          svgLayer.appendChild(dot);
+        }
       });
     }
 
@@ -756,6 +829,7 @@
       let startX, startY, origX, origY, moved = false;
       el.addEventListener('mousedown', (e) => {
         if (e.button !== 0) return;
+        e.stopPropagation();
         moved = false;
         startX = e.clientX;
         startY = e.clientY;
@@ -832,14 +906,15 @@
       const container = document.getElementById('claimsContainer');
       container.innerHTML = truth.claims.length ? '' : '<div class="empty-state" style="padding:1rem;">No explicit claims parsed from README.md.</div>';
       truth.claims.forEach(claim => {
+        const cleanText = cleanMarkdownText(claim.rawText);
         const div = document.createElement('div');
         div.className = `claim-item ${claim.status}`;
         div.innerHTML = `
           <div class="claim-header">
-            <span style="font-weight:700; color:var(--text-dim);">${escapeHtml(claim.category)}</span>
+            <span style="font-weight:700; color:var(--text-dim);">${escapeHtml(claim.category)} · ${escapeHtml(claim.claimedEntity)}</span>
             <span class="kind-pill kind-${claim.status === 'VERIFIED' ? 'COMPONENT' : 'DATABASE'}">${claim.status}</span>
           </div>
-          <div class="claim-text">"${escapeHtml(claim.rawText)}"</div>
+          <div class="claim-text">${escapeHtml(cleanText)}</div>
           <div class="claim-explanation">${escapeHtml(claim.explanation)}</div>
         `;
         container.appendChild(div);
@@ -998,6 +1073,16 @@
     function copyGeneratedTest() { navigator.clipboard.writeText(document.getElementById('testOutputCode').innerText); }
     function sanitizeId(str) { return (str || '').replace(/[^a-zA-Z0-9_-]/g, '_'); }
     function escapeHtml(str) { return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+    function cleanMarkdownText(str) {
+      return (str || '')
+        .replace(/<br\s*\/?>/gi, ' · ')
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .replace(/[*`]/g, '')
+        .replace(/^\|\s*|\s*\|$/g, '')
+        .replace(/\s*\|\s*/g, ' — ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
 
     window.onload = initApp;
   </script>
